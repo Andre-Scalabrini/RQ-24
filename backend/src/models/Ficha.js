@@ -121,6 +121,11 @@ const Ficha = sequelize.define('Ficha', {
   },
   
   // Legacy fields for backwards compatibility
+  // These fields are retained for compatibility with existing data.
+  // New data should use the _estimado and _obtido suffixed fields.
+  // material -> material_estimado/material_obtido
+  // peso_peca -> peso_peca_estimado/peso_peca_obtido
+  // etc.
   material: {
     type: DataTypes.STRING(100),
     allowNull: true
