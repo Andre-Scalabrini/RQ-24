@@ -11,7 +11,10 @@ import {
   LogOut, 
   User,
   Factory,
-  ChevronDown
+  ChevronDown,
+  Kanban,
+  CheckCircle,
+  XCircle
 } from 'lucide-react';
 
 const Layout = () => {
@@ -72,18 +75,30 @@ const Layout = () => {
         <nav className="sidebar-nav">
           <NavLink to="/" className={({ isActive }) => isActive && location.pathname === '/' ? 'active' : ''}>
             <LayoutDashboard size={20} />
+            Dashboard
+          </NavLink>
+          <NavLink to="/kanban" className={({ isActive }) => isActive ? 'active' : ''}>
+            <Kanban size={20} />
             Kanban
           </NavLink>
-          <NavLink to="/fichas" className={({ isActive }) => isActive ? 'active' : ''}>
+          <NavLink to="/fichas" className={({ isActive }) => isActive && !location.pathname.includes('/nova') ? 'active' : ''}>
             <FileText size={20} />
             Fichas
           </NavLink>
-          <NavLink to="/fichas/nova">
+          <NavLink to="/fichas/nova" className={({ isActive }) => isActive ? 'active' : ''}>
             <PlusCircle size={20} />
             Nova Ficha
           </NavLink>
+          <NavLink to="/aprovadas" className={({ isActive }) => isActive ? 'active' : ''}>
+            <CheckCircle size={20} />
+            Aprovadas
+          </NavLink>
+          <NavLink to="/reprovadas" className={({ isActive }) => isActive ? 'active' : ''}>
+            <XCircle size={20} />
+            Reprovadas
+          </NavLink>
           {isAdmin() && (
-            <NavLink to="/usuarios">
+            <NavLink to="/usuarios" className={({ isActive }) => isActive ? 'active' : ''}>
               <Users size={20} />
               Usuários
             </NavLink>
@@ -106,10 +121,13 @@ const Layout = () => {
       <main className="main-content">
         <header className="header">
           <h2>
-            {location.pathname === '/' && 'Quadro Kanban'}
+            {location.pathname === '/' && 'Dashboard'}
+            {location.pathname === '/kanban' && 'Quadro Kanban'}
             {location.pathname === '/fichas' && 'Lista de Fichas'}
             {location.pathname === '/fichas/nova' && 'Nova Ficha'}
             {location.pathname.includes('/editar') && 'Editar Ficha'}
+            {location.pathname === '/aprovadas' && 'Fichas Aprovadas'}
+            {location.pathname === '/reprovadas' && 'Fichas Reprovadas'}
             {location.pathname === '/usuarios' && 'Gerenciamento de Usuários'}
           </h2>
 

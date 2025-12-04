@@ -14,7 +14,11 @@ router.get('/', FichaController.index);
 router.get('/kanban', FichaController.kanban);
 router.get('/atrasadas', FichaController.atrasadas);
 router.get('/etapas', FichaController.getEtapas);
+router.get('/aprovadas', FichaController.aprovadasList);
+router.get('/reprovadas', FichaController.reprovadasList);
+router.get('/motivos-reprovacao', FichaController.getMotivosReprovacao);
 router.get('/:id', FichaController.show);
+router.get('/:id/reprovacoes', FichaController.getReprovacoes);
 
 // Criar ficha
 router.post('/', [
@@ -44,6 +48,20 @@ router.post('/:id/mover', [
   body('etapa_destino').notEmpty().withMessage('Etapa de destino é obrigatória'),
   validate
 ], FichaController.moverEtapa);
+
+// Reprovar ficha
+router.post('/:id/reprovar', [
+  canMoveFicha,
+  body('motivo').notEmpty().withMessage('Motivo da reprovação é obrigatório'),
+  body('descricao').notEmpty().withMessage('Descrição da reprovação é obrigatória'),
+  body('etapa_retorno').notEmpty().withMessage('Etapa de retorno é obrigatória'),
+  validate
+], FichaController.reprovar);
+
+// Marcar como reprovada final
+router.put('/:id/reprovar-final', [
+  canMoveFicha
+], FichaController.reprovarFinal);
 
 // Atualizar dados reais
 router.put('/:id/dados-reais', [

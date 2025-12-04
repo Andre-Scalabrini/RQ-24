@@ -11,8 +11,12 @@ import {
   ChevronRight, 
   Download,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  XCircle,
+  Ban
 } from 'lucide-react';
+import ModalReprovacao from './ModalReprovacao';
+import HistoricoReprovacoes from './HistoricoReprovacoes';
 
 const FichaDetails = () => {
   const { id } = useParams();
@@ -21,9 +25,11 @@ const FichaDetails = () => {
   const [ficha, setFicha] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showMoveModal, setShowMoveModal] = useState(false);
+  const [showReprovacaoModal, setShowReprovacaoModal] = useState(false);
   const [moveObservacoes, setMoveObservacoes] = useState('');
   const [movingTo, setMovingTo] = useState(null);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
+  const [reprovacoes, setReprovacoes] = useState([]);
 
   const ETAPAS = {
     criacao: 'Criação da Ficha',
@@ -48,9 +54,19 @@ const FichaDetails = () => {
     }
   }, [id, navigate]);
 
+  const loadReprovacoes = useCallback(async () => {
+    try {
+      const response = await api.get(`/fichas/${id}/reprovacoes`);
+      setReprovacoes(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar reprovações:', error);
+    }
+  }, [id]);
+
   useEffect(() => {
     loadFicha();
-  }, [loadFicha]);
+    loadReprovacoes();
+  }, [loadFicha, loadReprovacoes]);
 
   const getProximaEtapa = () => {
     const etapas = Object.keys(ETAPAS);
@@ -137,6 +153,7 @@ const FichaDetails = () => {
   }
 
   const proximaEtapa = getProximaEtapa();
+  const canReject = canMoveFicha() && ficha.status === 'em_andamento' && ficha.etapa_atual !== 'criacao';
 
   return (
     <div>
@@ -147,7 +164,11 @@ const FichaDetails = () => {
             <ArrowLeft size={16} />
           </button>
           <h1>{ficha.codigo}</h1>
-          {ficha.etapa_atual === 'aprovado' ? (
+          {ficha.status === 'reprovada_final' ? (
+            <span className="ficha-status" style={{ backgroundColor: '#ef4444', color: 'white' }}>
+              <Ban size={14} /> REPROVADA FINAL
+            </span>
+          ) : ficha.etapa_atual === 'aprovado' || ficha.status === 'aprovada' ? (
             <span className="ficha-status status-aprovado">
               <CheckCircle size={14} /> APROVADO
             </span>
@@ -160,9 +181,14 @@ const FichaDetails = () => {
               {ETAPAS[ficha.etapa_atual]}
             </span>
           )}
+          {ficha.quantidade_reprovacoes > 0 && (
+            <span className="ficha-status" style={{ backgroundColor: '#f59e0b', color: 'white' }}>
+              <XCircle size={14} /> {ficha.quantidade_reprovacoes}x Reprovações
+            </span>
+          )}
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {canMoveFicha() && proximaEtapa && (
+          {canMoveFicha() && proximaEtapa && ficha.status === 'em_andamento' && (
             <button 
               className="btn btn-success"
               onClick={() => {
@@ -171,6 +197,14 @@ const FichaDetails = () => {
               }}
             >
               <ChevronRight size={16} /> Mover para {ETAPAS[proximaEtapa]}
+            </button>
+          )}
+          {canReject && (
+            <button 
+              className="btn btn-danger"
+              onClick={() => setShowReprovacaoModal(true)}
+            >
+              <XCircle size={16} /> Reprovar
             </button>
           )}
           <button 
@@ -516,6 +550,32 @@ const FichaDetails = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Histórico de Reprovações */}
+      {reprovacoes && reprovacoes.length > 0 && (
+        <div className="card ficha-section" id="historico">
+          <div className="card-header">
+            <h2 style={{ color: '#ef4444' }}>
+              <XCircle size={18} /> Histórico de Reprovações ({reprovacoes.length})
+            </h2>
+          </div>
+          <div className="card-body">
+            <HistoricoReprovacoes reprovacoes={reprovacoes} />
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Reprovação */}
+      {showReprovacaoModal && (
+        <ModalReprovacao 
+          ficha={ficha}
+          onClose={() => setShowReprovacaoModal(false)}
+          onSuccess={() => {
+            loadFicha();
+            loadReprovacoes();
+          }}
+        />
       )}
     </div>
   );
