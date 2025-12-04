@@ -23,6 +23,7 @@ const FichaDetails = () => {
   const [showMoveModal, setShowMoveModal] = useState(false);
   const [moveObservacoes, setMoveObservacoes] = useState('');
   const [movingTo, setMovingTo] = useState(null);
+  const [downloadingPDF, setDownloadingPDF] = useState(false);
 
   const ETAPAS = {
     criacao: 'Criação da Ficha',
@@ -86,6 +87,7 @@ const FichaDetails = () => {
   };
 
   const handleDownloadPDF = async () => {
+    setDownloadingPDF(true);
     try {
       const response = await api.get(`/pdf/ficha/${id}`, {
         responseType: 'blob'
@@ -102,7 +104,12 @@ const FichaDetails = () => {
       
       toast.success('PDF gerado com sucesso!');
     } catch (error) {
-      toast.error('Erro ao gerar PDF');
+      const message = error.response?.status === 404 
+        ? 'Ficha não encontrada' 
+        : 'Erro ao gerar PDF. Tente novamente.';
+      toast.error(message);
+    } finally {
+      setDownloadingPDF(false);
     }
   };
 
@@ -166,8 +173,12 @@ const FichaDetails = () => {
               <ChevronRight size={16} /> Mover para {ETAPAS[proximaEtapa]}
             </button>
           )}
-          <button className="btn btn-outline" onClick={handleDownloadPDF}>
-            <Download size={16} /> PDF
+          <button 
+            className="btn btn-outline" 
+            onClick={handleDownloadPDF}
+            disabled={downloadingPDF}
+          >
+            <Download size={16} /> {downloadingPDF ? 'Gerando...' : 'PDF'}
           </button>
           <button className="btn btn-primary" onClick={() => navigate(`/fichas/${id}/editar`)}>
             <Edit size={16} /> Editar

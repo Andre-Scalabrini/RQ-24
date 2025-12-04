@@ -18,7 +18,7 @@ const Kanban = () => {
 
   useEffect(() => {
     loadKanban();
-    const interval = setInterval(loadKanban, 60000); // Refresh every minute
+    const interval = setInterval(loadKanban, 120000); // Refresh every 2 minutes
     return () => clearInterval(interval);
   }, []);
 

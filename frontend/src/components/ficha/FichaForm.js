@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
+import { toBooleanSafe, formatDateForInput } from '../../utils/helpers';
 import { Plus, Trash2, Save, ArrowLeft } from 'lucide-react';
 
 const processosMoldagem = ['PEPSET', 'COLDBOX', 'MOLDMATIC', 'JOB'];
@@ -42,7 +43,7 @@ const FichaForm = () => {
       
       // Format date for input
       if (ficha.prazo_final) {
-        ficha.prazo_final = ficha.prazo_final.split('T')[0];
+        ficha.prazo_final = formatDateForInput(ficha.prazo_final);
       }
       
       reset(ficha);
@@ -66,13 +67,13 @@ const FichaForm = () => {
       // Convert boolean strings to actual booleans
       const formData = {
         ...data,
-        possui_resfriadores: data.possui_resfriadores === 'true' || data.possui_resfriadores === true,
-        possui_usinagem: data.possui_usinagem === 'true' || data.possui_usinagem === true,
-        possui_pintura: data.possui_pintura === 'true' || data.possui_pintura === true,
-        possui_retifica: data.possui_retifica === 'true' || data.possui_retifica === true,
+        possui_resfriadores: toBooleanSafe(data.possui_resfriadores),
+        possui_usinagem: toBooleanSafe(data.possui_usinagem),
+        possui_pintura: toBooleanSafe(data.possui_pintura),
+        possui_retifica: toBooleanSafe(data.possui_retifica),
         caixas_macho: data.caixas_macho?.map(caixa => ({
           ...caixa,
-          possui_pintura_macho: caixa.possui_pintura_macho === 'true' || caixa.possui_pintura_macho === true
+          possui_pintura_macho: toBooleanSafe(caixa.possui_pintura_macho)
         }))
       };
 

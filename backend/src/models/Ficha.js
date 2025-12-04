@@ -178,21 +178,29 @@ const Ficha = sequelize.define('Ficha', {
   hooks: {
     beforeCreate: async (ficha) => {
       // Calcular RAM: peso total molde de areia / peso da peça
-      if (ficha.peso_molde_areia && ficha.peso_peca) {
-        ficha.ram = parseFloat(ficha.peso_molde_areia) / parseFloat(ficha.peso_peca);
+      const pesoPeca = parseFloat(ficha.peso_peca);
+      if (ficha.peso_molde_areia && pesoPeca > 0) {
+        ficha.ram = parseFloat(ficha.peso_molde_areia) / pesoPeca;
       }
       // Calcular RM: (peso da peça / peso do conjunto) × 100
       // peso do conjunto = peso da árvore
-      if (ficha.peso_peca && ficha.peso_arvore) {
-        ficha.rm = (parseFloat(ficha.peso_peca) / parseFloat(ficha.peso_arvore)) * 100;
+      const pesoArvore = parseFloat(ficha.peso_arvore);
+      if (ficha.peso_peca && pesoArvore > 0) {
+        ficha.rm = (parseFloat(ficha.peso_peca) / pesoArvore) * 100;
       }
     },
     beforeUpdate: async (ficha) => {
       if (ficha.changed('peso_molde_areia') || ficha.changed('peso_peca')) {
-        ficha.ram = parseFloat(ficha.peso_molde_areia) / parseFloat(ficha.peso_peca);
+        const pesoPeca = parseFloat(ficha.peso_peca);
+        if (pesoPeca > 0) {
+          ficha.ram = parseFloat(ficha.peso_molde_areia) / pesoPeca;
+        }
       }
       if (ficha.changed('peso_peca') || ficha.changed('peso_arvore')) {
-        ficha.rm = (parseFloat(ficha.peso_peca) / parseFloat(ficha.peso_arvore)) * 100;
+        const pesoArvore = parseFloat(ficha.peso_arvore);
+        if (pesoArvore > 0) {
+          ficha.rm = (parseFloat(ficha.peso_peca) / pesoArvore) * 100;
+        }
       }
       // Verificar atraso
       if (ficha.prazo_final && new Date() > new Date(ficha.prazo_final)) {
