@@ -6,6 +6,7 @@ const fichasRoutes = require('./fichas');
 const imagensRoutes = require('./imagens');
 const notificacoesRoutes = require('./notificacoes');
 const pdfRoutes = require('./pdf');
+const dashboardRoutes = require('./dashboard');
 
 const router = Router();
 
@@ -16,6 +17,7 @@ router.use('/fichas', fichasRoutes);
 router.use('/imagens', imagensRoutes);
 router.use('/notificacoes', notificacoesRoutes);
 router.use('/pdf', pdfRoutes);
+router.use('/dashboard', dashboardRoutes);
 
 // Health check
 router.get('/health', (req, res) => {

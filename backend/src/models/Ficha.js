@@ -143,6 +143,19 @@ const Ficha = sequelize.define('Ficha', {
     type: DataTypes.BOOLEAN,
     defaultValue: false
   },
+  // Campos de reprovação
+  quantidade_reprovacoes: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0
+  },
+  status: {
+    type: DataTypes.ENUM('em_andamento', 'aprovada', 'reprovada_final'),
+    defaultValue: 'em_andamento'
+  },
+  data_aprovacao: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
   // Campos para processo real (preenchidos no chão de fábrica)
   dados_reais_moldagem: {
     type: DataTypes.JSON,

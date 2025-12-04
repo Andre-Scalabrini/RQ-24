@@ -1,0 +1,220 @@
+import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+import api from '../../services/api';
+import { XCircle, Upload, X } from 'lucide-react';
+
+const ETAPAS = {
+  criacao: 'Criação da Ficha',
+  modelacao: 'Modelação',
+  moldagem: 'Moldagem',
+  fusao: 'Fusão',
+  rebarbacao: 'Rebarbação',
+  inspecao: 'Inspeção',
+  usinagem: 'Usinagem',
+  aprovado: 'Aprovado'
+};
+
+const ModalReprovacao = ({ ficha, onClose, onSuccess }) => {
+  const [motivo, setMotivo] = useState('');
+  const [descricao, setDescricao] = useState('');
+  const [etapaRetorno, setEtapaRetorno] = useState('');
+  const [imagens, setImagens] = useState([]);
+  const [motivos, setMotivos] = useState([]);
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    loadMotivos();
+  }, []);
+
+  const loadMotivos = async () => {
+    try {
+      const response = await api.get('/fichas/motivos-reprovacao');
+      setMotivos(response.data);
+    } catch (error) {
+      console.error('Erro ao carregar motivos:', error);
+      // Fallback motivos
+      setMotivos([
+        'Defeito dimensional',
+        'Defeito superficial',
+        'Porosidade',
+        'Trinca',
+        'Material incorreto',
+        'Outro'
+      ]);
+    }
+  };
+
+  const getEtapasAnteriores = () => {
+    const etapas = Object.keys(ETAPAS);
+    const indexAtual = etapas.indexOf(ficha.etapa_atual);
+    return etapas.slice(0, indexAtual).filter(e => e !== 'aprovado');
+  };
+
+  const handleImageUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append('imagem', file);
+      formData.append('ficha_id', ficha.id);
+      formData.append('etapa', 'reprovacao');
+      
+      try {
+        const response = await api.post('/imagens/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        setImagens(prev => [...prev, response.data.caminho]);
+      } catch (error) {
+        toast.error('Erro ao fazer upload da imagem');
+      }
+    }
+  };
+
+  const removeImage = (index) => {
+    setImagens(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!motivo || !descricao || !etapaRetorno) {
+      toast.warning('Preencha todos os campos obrigatórios');
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      await api.post(`/fichas/${ficha.id}/reprovar`, {
+        motivo,
+        descricao,
+        etapa_retorno: etapaRetorno,
+        imagens
+      });
+
+      toast.success('Ficha reprovada com sucesso!');
+      onSuccess?.();
+      onClose();
+    } catch (error) {
+      const message = error.response?.data?.error || 'Erro ao reprovar ficha';
+      toast.error(message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const etapasAnteriores = getEtapasAnteriores();
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal modal-lg" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-header" style={{ backgroundColor: '#fef2f2' }}>
+          <h3 style={{ color: '#ef4444', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <XCircle size={20} /> Reprovar Ficha {ficha.codigo}
+          </h3>
+          <button className="btn btn-outline btn-sm" onClick={onClose}>
+            <X size={16} />
+          </button>
+        </div>
+        
+        <form onSubmit={handleSubmit}>
+          <div className="modal-body">
+            <div className="form-group">
+              <label className="form-label">Motivo da Reprovação *</label>
+              <select
+                className="form-select"
+                value={motivo}
+                onChange={(e) => setMotivo(e.target.value)}
+                required
+              >
+                <option value="">Selecione o motivo</option>
+                {motivos.map((m, index) => (
+                  <option key={index} value={m}>{m}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Descrição Detalhada *</label>
+              <textarea
+                className="form-textarea"
+                rows={4}
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                placeholder="Descreva detalhadamente o problema encontrado..."
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Etapa de Retorno *</label>
+              <select
+                className="form-select"
+                value={etapaRetorno}
+                onChange={(e) => setEtapaRetorno(e.target.value)}
+                required
+              >
+                <option value="">Selecione a etapa</option>
+                {etapasAnteriores.map((etapa) => (
+                  <option key={etapa} value={etapa}>{ETAPAS[etapa]}</option>
+                ))}
+              </select>
+              <small style={{ color: '#64748b', fontSize: '0.75rem' }}>
+                A ficha será enviada de volta para esta etapa para correção.
+              </small>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Anexar Imagens do Defeito</label>
+              <div className="file-upload-container">
+                <input
+                  type="file"
+                  id="imagem-upload"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  style={{ display: 'none' }}
+                />
+                <label htmlFor="imagem-upload" className="btn btn-outline">
+                  <Upload size={16} /> Adicionar Imagens
+                </label>
+              </div>
+              
+              {imagens.length > 0 && (
+                <div className="image-preview-container">
+                  {imagens.map((img, index) => (
+                    <div key={index} className="image-preview">
+                      <img src={`/uploads/${img}`} alt={`Preview ${index + 1}`} />
+                      <button
+                        type="button"
+                        className="image-remove"
+                        onClick={() => removeImage(index)}
+                      >
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="modal-footer">
+            <button type="button" className="btn btn-outline" onClick={onClose}>
+              Cancelar
+            </button>
+            <button 
+              type="submit" 
+              className="btn btn-danger"
+              disabled={submitting || !motivo || !descricao || !etapaRetorno}
+            >
+              {submitting ? 'Reprovando...' : 'Confirmar Reprovação'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default ModalReprovacao;

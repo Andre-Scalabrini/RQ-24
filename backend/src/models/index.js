@@ -7,6 +7,8 @@ const MoldeArvore = require('./MoldeArvore');
 const Movimentacao = require('./Movimentacao');
 const Imagem = require('./Imagem');
 const Notificacao = require('./Notificacao');
+const Reprovacao = require('./Reprovacao');
+const ImagemReprovacao = require('./ImagemReprovacao');
 
 // Associations
 
@@ -54,6 +56,18 @@ Notificacao.belongsTo(Usuario, { foreignKey: 'usuario_id', as: 'usuario' });
 Ficha.hasMany(Notificacao, { foreignKey: 'ficha_id', as: 'notificacoes' });
 Notificacao.belongsTo(Ficha, { foreignKey: 'ficha_id', as: 'ficha' });
 
+// Ficha - Reprovacao
+Ficha.hasMany(Reprovacao, { foreignKey: 'ficha_id', as: 'reprovacoes', onDelete: 'CASCADE' });
+Reprovacao.belongsTo(Ficha, { foreignKey: 'ficha_id', as: 'ficha' });
+
+// Usuario - Reprovacao
+Usuario.hasMany(Reprovacao, { foreignKey: 'usuario_id', as: 'reprovacoes_realizadas' });
+Reprovacao.belongsTo(Usuario, { foreignKey: 'usuario_id', as: 'usuario' });
+
+// Reprovacao - ImagemReprovacao
+Reprovacao.hasMany(ImagemReprovacao, { foreignKey: 'reprovacao_id', as: 'imagens', onDelete: 'CASCADE' });
+ImagemReprovacao.belongsTo(Reprovacao, { foreignKey: 'reprovacao_id', as: 'reprovacao' });
+
 module.exports = {
   sequelize,
   Setor,
@@ -63,5 +77,7 @@ module.exports = {
   MoldeArvore,
   Movimentacao,
   Imagem,
-  Notificacao
+  Notificacao,
+  Reprovacao,
+  ImagemReprovacao
 };
