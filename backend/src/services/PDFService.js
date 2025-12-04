@@ -1,5 +1,5 @@
 const PDFDocument = require('pdfkit');
-const { Ficha, CaixaMacho, MoldeArvore, Usuario, Movimentacao } = require('../models');
+const { Ficha, CaixaMacho, MoldeArvore, LuvaKalpur, Usuario, Movimentacao } = require('../models');
 
 // Mapeamento de etapas (10 etapas conforme RQ-24 Rev. 06)
 const ETAPAS = {
@@ -21,6 +21,7 @@ class PDFService {
       include: [
         { model: CaixaMacho, as: 'caixas_macho', order: [['ordem', 'ASC']] },
         { model: MoldeArvore, as: 'moldes_arvore', order: [['ordem', 'ASC']] },
+        { model: LuvaKalpur, as: 'luvas_kalpur', order: [['ordem', 'ASC']] },
         { model: Usuario, as: 'criador', attributes: ['id', 'nome'] },
         { 
           model: Movimentacao, 
@@ -163,7 +164,18 @@ class PDFService {
         this.addField(doc, 'Resfriadores', ficha.possui_resfriadores ? 
           `Sim (${ficha.quantidade_resfriadores})` : 'Não');
         this.addField(doc, 'Lateral de Aço', ficha.lateral_aco || '-');
-        this.addField(doc, 'Luva Kalpur', ficha.luva_kalpur || '-');
+        
+        // Luvas / Kalpur dinâmicos
+        if (ficha.luvas_kalpur && ficha.luvas_kalpur.length > 0) {
+          doc.fontSize(10).font('Helvetica-Bold').text('Luvas / Kalpur:');
+          ficha.luvas_kalpur.forEach((luva, index) => {
+            this.addField(doc, `  ${index + 1}. Quantidade`, luva.quantidade?.toString() || '-');
+            this.addField(doc, `     Descrição`, luva.descricao || '-');
+            this.addField(doc, `     Peso`, luva.peso_kg ? `${luva.peso_kg} kg` : '-');
+          });
+        } else {
+          this.addField(doc, 'Luva Kalpur', ficha.luva_kalpur || '-');
+        }
         doc.moveDown();
 
         // Seção: Moldes de Árvore (Acabamento)

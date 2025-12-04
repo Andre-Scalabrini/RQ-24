@@ -34,7 +34,8 @@ const FichaForm = () => {
   const { register, handleSubmit, watch, control, reset, formState: { errors } } = useForm({
     defaultValues: {
       caixas_macho: [],
-      moldes_arvore: []
+      moldes_arvore: [],
+      luvas_kalpur: []
     }
   });
 
@@ -46,6 +47,11 @@ const FichaForm = () => {
   const { fields: moldesArvore, append: appendMolde, remove: removeMolde } = useFieldArray({
     control,
     name: 'moldes_arvore'
+  });
+
+  const { fields: luvasKalpur, append: appendLuva, remove: removeLuva } = useFieldArray({
+    control,
+    name: 'luvas_kalpur'
   });
 
   const processoMoldagem = watch('processo_moldagem');
@@ -588,20 +594,91 @@ const FichaForm = () => {
           </div>
         </div>
 
-        {/* Outros Campos */}
+        {/* Luvas / Kalpur */}
         <div className="card" style={{ marginBottom: '1.5rem' }}>
           <div className="card-header">
-            <h3>Outros Dados</h3>
+            <h3>Luvas / Kalpur</h3>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => appendLuva({
+                quantidade: '',
+                descricao: '',
+                peso_kg: ''
+              })}
+            >
+              <Plus size={16} /> Adicionar Luva/Kalpur
+            </button>
+          </div>
+          <div className="card-body">
+            {luvasKalpur.length === 0 ? (
+              <p style={{ color: '#64748b', textAlign: 'center' }}>
+                Nenhuma luva/kalpur adicionada
+              </p>
+            ) : (
+              luvasKalpur.map((field, index) => (
+                <div key={field.id} className="dynamic-field-item">
+                  <div className="dynamic-field-item-header">
+                    <strong>Luva/Kalpur {index + 1}</strong>
+                    <button
+                      type="button"
+                      className="btn btn-danger btn-sm"
+                      onClick={() => removeLuva(index)}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label">Quantidade</label>
+                      <input
+                        type="number"
+                        min="1"
+                        className="form-input"
+                        {...register(`luvas_kalpur.${index}.quantidade`, { required: true })}
+                      />
+                    </div>
+                    <div className="form-group" style={{ flex: 2 }}>
+                      <label className="form-label">Descrição</label>
+                      <input
+                        type="text"
+                        className="form-input"
+                        {...register(`luvas_kalpur.${index}.descricao`)}
+                      />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label">Peso (kg)</label>
+                      <input
+                        type="number"
+                        step="0.001"
+                        className="form-input"
+                        {...register(`luvas_kalpur.${index}.peso_kg`)}
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Outros Campos - Moldagem */}
+        <div className="card" style={{ marginBottom: '1.5rem' }}>
+          <div className="card-header">
+            <h3>Moldagem - Outros Dados</h3>
           </div>
           <div className="card-body">
             <div className="form-row">
               <div className="form-group">
                 <label className="form-label">Posição de Vazamento *</label>
-                <input
-                  type="text"
-                  className={`form-input ${errors.posicao_vazamento ? 'error' : ''}`}
+                <select
+                  className={`form-select ${errors.posicao_vazamento ? 'error' : ''}`}
                   {...register('posicao_vazamento', { required: 'Campo obrigatório' })}
-                />
+                >
+                  <option value="">Selecione...</option>
+                  <option value="Vertical">Vertical</option>
+                  <option value="Horizontal">Horizontal</option>
+                </select>
                 {errors.posicao_vazamento && <span className="form-error">{errors.posicao_vazamento.message}</span>}
               </div>
 

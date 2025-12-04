@@ -462,6 +462,39 @@ const FichaDetails = () => {
         </div>
       )}
 
+      {/* Luvas / Kalpur */}
+      {ficha.luvas_kalpur && ficha.luvas_kalpur.length > 0 && (
+        <div className="card ficha-section">
+          <div className="card-header">
+            <h2>Luvas / Kalpur ({ficha.luvas_kalpur.length})</h2>
+          </div>
+          <div className="card-body">
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Quantidade</th>
+                    <th>Descrição</th>
+                    <th>Peso (kg)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ficha.luvas_kalpur.map((luva, index) => (
+                    <tr key={luva.id}>
+                      <td>{index + 1}</td>
+                      <td>{luva.quantidade}</td>
+                      <td>{luva.descricao || '-'}</td>
+                      <td>{luva.peso_kg || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Outros Dados */}
       <div className="card ficha-section">
         <div className="card-header">
@@ -471,7 +504,7 @@ const FichaDetails = () => {
           <div className="ficha-grid">
             <div className="ficha-field">
               <span className="ficha-field-label">Posição de Vazamento</span>
-              <span className="ficha-field-value">{ficha.posicao_vazamento}</span>
+              <span className="ficha-field-value">{ficha.posicao_vazamento || '-'}</span>
             </div>
             <div className="ficha-field">
               <span className="ficha-field-label">Resfriadores</span>
@@ -483,10 +516,12 @@ const FichaDetails = () => {
               <span className="ficha-field-label">Lateral de Aço</span>
               <span className="ficha-field-value">{ficha.lateral_aco || '-'}</span>
             </div>
-            <div className="ficha-field">
-              <span className="ficha-field-label">Luva Kalpur</span>
-              <span className="ficha-field-value">{ficha.luva_kalpur || '-'}</span>
-            </div>
+            {!ficha.luvas_kalpur?.length && (
+              <div className="ficha-field">
+                <span className="ficha-field-label">Luva Kalpur</span>
+                <span className="ficha-field-value">{ficha.luva_kalpur || '-'}</span>
+              </div>
+            )}
             <div className="ficha-field">
               <span className="ficha-field-label">Trat. Térmico Peça Bruta</span>
               <span className="ficha-field-value">{ficha.tratamento_termico_peca_bruta || '-'}</span>
