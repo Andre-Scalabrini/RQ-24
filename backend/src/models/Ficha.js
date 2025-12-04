@@ -255,6 +255,14 @@ const Ficha = sequelize.define('Ficha', {
     type: DataTypes.DATE,
     allowNull: true
   },
+  data_reprovacao: {
+    type: DataTypes.DATE,
+    allowNull: true
+  },
+  etapa_reprovacao: {
+    type: DataTypes.STRING(50),
+    allowNull: true
+  },
   
   // Dados reais por etapa (JSON para flexibilidade)
   dados_reais_modelacao: {

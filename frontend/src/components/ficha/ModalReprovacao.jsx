@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import api from '../../services/api';
-import { XCircle, Upload, X } from 'lucide-react';
+import { XCircle, Upload, X, AlertTriangle } from 'lucide-react';
 
 const ETAPAS = {
   criacao: 'Criação da Ficha',
@@ -19,7 +19,6 @@ const ETAPAS = {
 const ModalReprovacao = ({ ficha, onClose, onSuccess }) => {
   const [motivo, setMotivo] = useState('');
   const [descricao, setDescricao] = useState('');
-  const [etapaRetorno, setEtapaRetorno] = useState('');
   const [imagens, setImagens] = useState([]);
   const [motivos, setMotivos] = useState([]);
   const [submitting, setSubmitting] = useState(false);
@@ -40,16 +39,12 @@ const ModalReprovacao = ({ ficha, onClose, onSuccess }) => {
         'Defeito superficial',
         'Porosidade',
         'Trinca',
+        'Inclusão',
         'Material incorreto',
+        'Rechupe',
         'Outro'
       ]);
     }
-  };
-
-  const getEtapasAnteriores = () => {
-    const etapas = Object.keys(ETAPAS);
-    const indexAtual = etapas.indexOf(ficha.etapa_atual);
-    return etapas.slice(0, indexAtual).filter(e => e !== 'aprovado');
   };
 
   const handleImageUpload = async (e) => {
@@ -79,7 +74,7 @@ const ModalReprovacao = ({ ficha, onClose, onSuccess }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!motivo || !descricao || !etapaRetorno) {
+    if (!motivo || !descricao) {
       toast.warning('Preencha todos os campos obrigatórios');
       return;
     }
@@ -90,11 +85,10 @@ const ModalReprovacao = ({ ficha, onClose, onSuccess }) => {
       await api.post(`/fichas/${ficha.id}/reprovar`, {
         motivo,
         descricao,
-        etapa_retorno: etapaRetorno,
         imagens
       });
 
-      toast.success('Ficha reprovada com sucesso!');
+      toast.success('Ficha reprovada e movida para a aba "Reprovados"');
       onSuccess?.();
       onClose();
     } catch (error) {
@@ -104,8 +98,6 @@ const ModalReprovacao = ({ ficha, onClose, onSuccess }) => {
       setSubmitting(false);
     }
   };
-
-  const etapasAnteriores = getEtapasAnteriores();
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -121,6 +113,32 @@ const ModalReprovacao = ({ ficha, onClose, onSuccess }) => {
         
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
+            <div style={{ 
+              padding: '0.75rem 1rem',
+              backgroundColor: '#fef9c3',
+              borderRadius: '0.375rem',
+              marginBottom: '1rem',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '0.5rem'
+            }}>
+              <AlertTriangle size={20} color="#ca8a04" style={{ marginTop: '2px', flexShrink: 0 }} />
+              <div style={{ color: '#854d0e', fontSize: '0.875rem' }}>
+                <strong>Atenção:</strong> A ficha será movida para a aba "Reprovados" e removida do Kanban.
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Etapa Atual</label>
+              <input
+                type="text"
+                className="form-input"
+                value={ETAPAS[ficha.etapa_atual] || ficha.etapa_atual}
+                disabled
+                style={{ backgroundColor: '#f1f5f9' }}
+              />
+            </div>
+
             <div className="form-group">
               <label className="form-label">Motivo da Reprovação *</label>
               <select
@@ -146,24 +164,6 @@ const ModalReprovacao = ({ ficha, onClose, onSuccess }) => {
                 placeholder="Descreva detalhadamente o problema encontrado..."
                 required
               />
-            </div>
-
-            <div className="form-group">
-              <label className="form-label">Etapa de Retorno *</label>
-              <select
-                className="form-select"
-                value={etapaRetorno}
-                onChange={(e) => setEtapaRetorno(e.target.value)}
-                required
-              >
-                <option value="">Selecione a etapa</option>
-                {etapasAnteriores.map((etapa) => (
-                  <option key={etapa} value={etapa}>{ETAPAS[etapa]}</option>
-                ))}
-              </select>
-              <small style={{ color: '#64748b', fontSize: '0.75rem' }}>
-                A ficha será enviada de volta para esta etapa para correção.
-              </small>
             </div>
 
             <div className="form-group">
@@ -212,7 +212,7 @@ const ModalReprovacao = ({ ficha, onClose, onSuccess }) => {
             <button 
               type="submit" 
               className="btn btn-danger"
-              disabled={submitting || !motivo || !descricao || !etapaRetorno}
+              disabled={submitting || !motivo || !descricao}
             >
               {submitting ? 'Reprovando...' : 'Confirmar Reprovação'}
             </button>

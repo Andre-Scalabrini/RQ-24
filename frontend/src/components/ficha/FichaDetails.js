@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import ModalReprovacao from './ModalReprovacao';
 import HistoricoReprovacoes from './HistoricoReprovacoes';
+import DadosComparativo from './DadosComparativo';
 
 const FichaDetails = () => {
   const { id } = useParams();
@@ -269,62 +270,70 @@ const FichaDetails = () => {
         </div>
       </div>
 
-      {/* Dados Gerais - Estimado vs Obtido */}
-      <div className="card ficha-section">
-        <div className="card-header">
-          <h2>Dados Gerais</h2>
-        </div>
-        <div className="card-body">
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Campo</th>
-                  <th>Estimado</th>
-                  <th>Obtido</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>Material</td>
-                  <td>{ficha.material_estimado || ficha.material || '-'}</td>
-                  <td>{ficha.material_obtido || '-'}</td>
-                </tr>
-                <tr>
-                  <td>Peso da Peça (kg)</td>
-                  <td>{ficha.peso_peca_estimado || ficha.peso_peca || '-'}</td>
-                  <td>{ficha.peso_peca_obtido || '-'}</td>
-                </tr>
-                <tr>
-                  <td>Nº Peças por Molde</td>
-                  <td>{ficha.numero_pecas_molde_estimado || ficha.numero_pecas_molde || '-'}</td>
-                  <td>{ficha.numero_pecas_molde_obtido || '-'}</td>
-                </tr>
-                <tr>
-                  <td>Peso do Molde (kg)</td>
-                  <td>{ficha.peso_molde_estimado || ficha.peso_molde_areia || '-'}</td>
-                  <td>{ficha.peso_molde_obtido || '-'}</td>
-                </tr>
-                <tr>
-                  <td>Peso da Árvore (kg)</td>
-                  <td>{ficha.peso_arvore_estimado || ficha.peso_arvore || '-'}</td>
-                  <td>{ficha.peso_arvore_obtido || '-'}</td>
-                </tr>
-                <tr>
-                  <td>RAM</td>
-                  <td>{ficha.ram_estimado || ficha.ram ? parseFloat(ficha.ram_estimado || ficha.ram).toFixed(3) : '-'}</td>
-                  <td>{ficha.ram_obtido ? parseFloat(ficha.ram_obtido).toFixed(3) : '-'}</td>
-                </tr>
-                <tr>
-                  <td>RM (%)</td>
-                  <td>{ficha.rm_estimado || ficha.rm ? `${parseFloat(ficha.rm_estimado || ficha.rm).toFixed(2)}%` : '-'}</td>
-                  <td>{ficha.rm_obtido ? `${parseFloat(ficha.rm_obtido).toFixed(2)}%` : '-'}</td>
-                </tr>
-              </tbody>
-            </table>
+      {/* Dados Gerais - Estimado vs Obtido with side-by-side editing */}
+      {ficha.status === 'em_andamento' && ficha.etapa_atual !== 'criacao' && ficha.etapa_atual !== 'aprovado' ? (
+        <DadosComparativo 
+          ficha={ficha} 
+          etapaAtual={ficha.etapa_atual}
+          onUpdate={loadFicha}
+        />
+      ) : (
+        <div className="card ficha-section">
+          <div className="card-header">
+            <h2>Dados Gerais</h2>
+          </div>
+          <div className="card-body">
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Campo</th>
+                    <th>Estimado</th>
+                    <th>Obtido</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Material</td>
+                    <td>{ficha.material_estimado || ficha.material || '-'}</td>
+                    <td>{ficha.material_obtido || '-'}</td>
+                  </tr>
+                  <tr>
+                    <td>Peso da Peça (kg)</td>
+                    <td>{ficha.peso_peca_estimado || ficha.peso_peca || '-'}</td>
+                    <td>{ficha.peso_peca_obtido || '-'}</td>
+                  </tr>
+                  <tr>
+                    <td>Nº Peças por Molde</td>
+                    <td>{ficha.numero_pecas_molde_estimado || ficha.numero_pecas_molde || '-'}</td>
+                    <td>{ficha.numero_pecas_molde_obtido || '-'}</td>
+                  </tr>
+                  <tr>
+                    <td>Peso do Molde (kg)</td>
+                    <td>{ficha.peso_molde_estimado || ficha.peso_molde_areia || '-'}</td>
+                    <td>{ficha.peso_molde_obtido || '-'}</td>
+                  </tr>
+                  <tr>
+                    <td>Peso da Árvore (kg)</td>
+                    <td>{ficha.peso_arvore_estimado || ficha.peso_arvore || '-'}</td>
+                    <td>{ficha.peso_arvore_obtido || '-'}</td>
+                  </tr>
+                  <tr>
+                    <td>RAM</td>
+                    <td>{ficha.ram_estimado || ficha.ram ? parseFloat(ficha.ram_estimado || ficha.ram).toFixed(3) : '-'}</td>
+                    <td>{ficha.ram_obtido ? parseFloat(ficha.ram_obtido).toFixed(3) : '-'}</td>
+                  </tr>
+                  <tr>
+                    <td>RM (%)</td>
+                    <td>{ficha.rm_estimado || ficha.rm ? `${parseFloat(ficha.rm_estimado || ficha.rm).toFixed(2)}%` : '-'}</td>
+                    <td>{ficha.rm_obtido ? `${parseFloat(ficha.rm_obtido).toFixed(2)}%` : '-'}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Moldagem */}
       <div className="card ficha-section">
