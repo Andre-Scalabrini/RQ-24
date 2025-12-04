@@ -133,12 +133,17 @@ class FichaController {
           where: { 
             prazo_final: { [Op.lt]: new Date() },
             etapa_atual: { [Op.ne]: 'aprovado' },
+            status: 'em_andamento',
             atrasada: false
           } 
         }
       );
 
+      // Only show fichas that are "em_andamento" - exclude reprovada_final
       const fichas = await Ficha.findAll({
+        where: {
+          status: 'em_andamento'
+        },
         include: [
           { model: Usuario, as: 'criador', attributes: ['id', 'nome'] },
           { model: CaixaMacho, as: 'caixas_macho' },
@@ -554,7 +559,7 @@ class FichaController {
   async reprovar(req, res) {
     try {
       const { id } = req.params;
-      const { motivo, descricao, etapa_retorno, imagens } = req.body;
+      const { motivo, descricao, imagens } = req.body;
 
       const ficha = await Ficha.findByPk(id);
 
@@ -567,22 +572,12 @@ class FichaController {
       }
 
       const etapaAtual = ficha.etapa_atual;
-      const etapas = Object.keys(ETAPAS);
-      const indexAtual = etapas.indexOf(etapaAtual);
-      const indexRetorno = etapas.indexOf(etapa_retorno);
 
-      // Validate that etapa_retorno is before current stage
-      if (indexRetorno >= indexAtual) {
-        return res.status(400).json({ 
-          error: 'A etapa de retorno deve ser anterior à etapa atual' 
-        });
-      }
-
-      // Create rejection record
+      // Create rejection record (without etapa_retorno - ficha goes to "Reprovados" tab)
       const reprovacao = await Reprovacao.create({
         ficha_id: id,
         etapa_reprovacao: etapaAtual,
-        etapa_retorno,
+        etapa_retorno: null,  // No return stage - goes to Reprovados tab
         motivo,
         descricao,
         usuario_id: req.usuarioId
@@ -598,9 +593,11 @@ class FichaController {
         }
       }
 
-      // Update ficha
+      // Update ficha - move to "reprovada_final" status (removed from Kanban)
       await ficha.update({
-        etapa_atual: etapa_retorno,
+        status: 'reprovada_final',
+        data_reprovacao: new Date(),
+        etapa_reprovacao: etapaAtual,
         quantidade_reprovacoes: ficha.quantidade_reprovacoes + 1
       });
 
@@ -609,15 +606,17 @@ class FichaController {
         ficha_id: id,
         usuario_id: req.usuarioId,
         etapa_origem: etapaAtual,
-        etapa_destino: etapa_retorno,
+        etapa_destino: 'reprovada_final',
         observacoes: `Reprovada: ${motivo} - ${descricao}`
       });
 
-      // Create notification for the return stage sector
-      await NotificacaoService.criarNotificacaoMovimentacao(
+      // Create notifications for admin and projetista
+      await NotificacaoService.criarNotificacaoReprovacao(
         ficha.id,
         ficha.codigo,
-        etapa_retorno
+        ficha.criado_por,
+        motivo,
+        etapaAtual
       );
 
       const fichaAtualizada = await Ficha.findByPk(id, {
@@ -726,29 +725,27 @@ class FichaController {
 
   async reprovadasList(req, res) {
     try {
-      const { periodo, motivo, etapa, status, page, limit } = req.query;
+      const { periodo, motivo, etapa, page, limit } = req.query;
       
-      // Get fichas with rejections or reprovada_final status
-      const fichaWhere = {};
+      // With the new flow, rejected fichas always have status 'reprovada_final'
+      // They are removed from Kanban and go to the "Reprovados" tab
+      const fichaWhere = { status: 'reprovada_final' };
       
-      if (status === 'reprovada_final') {
-        fichaWhere.status = 'reprovada_final';
-      } else if (status === 'em_retrabalho') {
-        fichaWhere.status = 'em_andamento';
-        fichaWhere.quantidade_reprovacoes = { [Op.gt]: 0 };
-      } else {
-        // Show all with rejections
-        fichaWhere[Op.or] = [
-          { status: 'reprovada_final' },
-          { 
-            status: 'em_andamento',
-            quantidade_reprovacoes: { [Op.gt]: 0 }
-          }
-        ];
-      }
-
+      // Filter by etapa_reprovacao (the stage where it was rejected)
       if (etapa) {
-        fichaWhere.etapa_atual = etapa;
+        fichaWhere.etapa_reprovacao = etapa;
+      }
+      
+      // Filter by period (based on data_reprovacao)
+      if (periodo) {
+        const now = new Date();
+        if (periodo === '7dias') {
+          const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          fichaWhere.data_reprovacao = { [Op.gte]: sevenDaysAgo };
+        } else if (periodo === '30dias') {
+          const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          fichaWhere.data_reprovacao = { [Op.gte]: thirtyDaysAgo };
+        }
       }
 
       const options = {

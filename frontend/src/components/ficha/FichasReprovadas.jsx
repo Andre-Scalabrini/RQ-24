@@ -4,15 +4,17 @@ import { toast } from 'react-toastify';
 import api from '../../services/api';
 import { format, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Eye, History, XCircle, RefreshCw, AlertOctagon, RotateCcw, Ban } from 'lucide-react';
+import { Eye, History, XCircle, RefreshCw, Download } from 'lucide-react';
 
 const ETAPAS = {
   criacao: 'Criação',
   modelacao: 'Modelação',
   moldagem: 'Moldagem',
   fusao: 'Fusão',
-  rebarbacao: 'Rebarbação',
+  acabamento: 'Acabamento',
+  analise_critica: 'Análise Crítica',
   inspecao: 'Inspeção',
+  dimensional: 'Dimensional',
   usinagem: 'Usinagem'
 };
 
@@ -24,12 +26,11 @@ const FichasReprovadas = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [filters, setFilters] = useState({
-    status: '',
+    periodo: '',
     motivo: '',
     etapa: ''
   });
   const [motivos, setMotivos] = useState([]);
-  const [confirmModal, setConfirmModal] = useState({ show: false, fichaId: null, codigo: '' });
 
   const limit = 20;
 
@@ -74,20 +75,27 @@ const FichasReprovadas = () => {
 
   const formatDate = (date) => {
     if (!date) return '-';
-    return format(parseISO(date), "dd/MM/yyyy", { locale: ptBR });
+    return format(parseISO(date), "dd/MM/yyyy HH:mm", { locale: ptBR });
   };
 
-  const handleReprovarFinal = async () => {
+  const handleDownloadPDF = async (ficha) => {
     try {
-      await api.put(`/fichas/${confirmModal.fichaId}/reprovar-final`, {
-        observacoes: 'Ficha marcada como reprovada final pelo usuário'
+      const response = await api.get(`/pdf/ficha/${ficha.id}`, {
+        responseType: 'blob'
       });
-      toast.success('Ficha marcada como reprovada final');
-      setConfirmModal({ show: false, fichaId: null, codigo: '' });
-      loadFichas();
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `ficha-${ficha.codigo}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      toast.success('PDF gerado com sucesso!');
     } catch (error) {
-      const message = error.response?.data?.error || 'Erro ao reprovar ficha';
-      toast.error(message);
+      toast.error('Erro ao gerar PDF');
     }
   };
 
@@ -106,7 +114,7 @@ const FichasReprovadas = () => {
       <div className="page-header">
         <div className="page-title">
           <XCircle size={24} color="#ef4444" />
-          <h2>Fichas Reprovadas / Em Retrabalho</h2>
+          <h2>Fichas Reprovadas</h2>
           <span className="badge" style={{ backgroundColor: '#ef4444', color: 'white' }}>
             {total} fichas
           </span>
@@ -116,32 +124,36 @@ const FichasReprovadas = () => {
         </button>
       </div>
 
-      {/* Status Legend */}
-      <div className="status-legend">
-        <div className="legend-item">
-          <RotateCcw size={14} color="#f59e0b" />
-          <span>Em Retrabalho</span>
-        </div>
-        <div className="legend-item">
-          <Ban size={14} color="#ef4444" />
-          <span>Reprovada Final</span>
-        </div>
+      {/* Info Box */}
+      <div style={{ 
+        padding: '1rem',
+        backgroundColor: '#fef2f2',
+        borderRadius: '0.5rem',
+        marginBottom: '1.5rem',
+        borderLeft: '4px solid #ef4444'
+      }}>
+        <p style={{ color: '#991b1b', margin: 0, fontSize: '0.875rem' }}>
+          Esta aba exibe todas as fichas que foram reprovadas durante o processo. 
+          Fichas reprovadas são removidas do Kanban e não retornam para etapas anteriores.
+        </p>
       </div>
 
       {/* Filters */}
       <div className="filters-row">
         <div className="form-group">
+          <label className="form-label">Período</label>
           <select
             className="form-select"
-            value={filters.status}
-            onChange={(e) => handleFilterChange('status', e.target.value)}
+            value={filters.periodo}
+            onChange={(e) => handleFilterChange('periodo', e.target.value)}
           >
-            <option value="">Todos os status</option>
-            <option value="em_retrabalho">Em Retrabalho</option>
-            <option value="reprovada_final">Reprovada Final</option>
+            <option value="">Todos</option>
+            <option value="7dias">Últimos 7 dias</option>
+            <option value="30dias">Últimos 30 dias</option>
           </select>
         </div>
         <div className="form-group">
+          <label className="form-label">Motivo</label>
           <select
             className="form-select"
             value={filters.motivo}
@@ -154,6 +166,7 @@ const FichasReprovadas = () => {
           </select>
         </div>
         <div className="form-group">
+          <label className="form-label">Etapa Reprovada</label>
           <select
             className="form-select"
             value={filters.etapa}
@@ -174,12 +187,12 @@ const FichasReprovadas = () => {
             <thead>
               <tr>
                 <th>Nº Ficha</th>
-                <th>Projetista</th>
-                <th>Último Motivo</th>
-                <th>Reprovações</th>
-                <th>Status</th>
-                <th>Etapa Atual</th>
-                <th>Última Reprovação</th>
+                <th>Código Peça</th>
+                <th>Cliente</th>
+                <th>Etapa Reprovada</th>
+                <th>Motivo</th>
+                <th>Responsável</th>
+                <th>Data/Hora</th>
                 <th>Ações</th>
               </tr>
             </thead>
@@ -194,37 +207,20 @@ const FichasReprovadas = () => {
                 fichas.map((ficha) => (
                   <tr key={ficha.id}>
                     <td>
-                      <strong style={{ color: '#2563eb' }}>{ficha.codigo}</strong>
+                      <strong style={{ color: '#ef4444' }}>{ficha.codigo}</strong>
                     </td>
-                    <td>{ficha.projetista}</td>
+                    <td>{ficha.codigo_peca || '-'}</td>
+                    <td>{ficha.cliente || '-'}</td>
                     <td>
-                      {ficha.ultimo_motivo || '-'}
-                    </td>
-                    <td>
-                      <span style={{ 
-                        color: ficha.quantidade_reprovacoes >= 3 ? '#ef4444' : '#f59e0b',
-                        fontWeight: 600
-                      }}>
-                        {ficha.quantidade_reprovacoes}x
+                      <span className="status-badge status-reprovada">
+                        {ETAPAS[ficha.etapa_reprovacao] || ficha.etapa_reprovacao || '-'}
                       </span>
                     </td>
                     <td>
-                      {ficha.status === 'reprovada_final' ? (
-                        <span className="status-badge status-reprovada">
-                          <Ban size={12} /> Reprovada Final
-                        </span>
-                      ) : (
-                        <span className="status-badge status-retrabalho">
-                          <RotateCcw size={12} /> Em Retrabalho
-                        </span>
-                      )}
+                      {ficha.ultimo_motivo || '-'}
                     </td>
-                    <td>
-                      {ficha.status === 'reprovada_final' ? '-' : (
-                        ETAPAS[ficha.etapa_atual] || ficha.etapa_atual
-                      )}
-                    </td>
-                    <td>{formatDate(ficha.ultima_reprovacao)}</td>
+                    <td>{ficha.reprovacoes?.[0]?.usuario?.nome || ficha.projetista || '-'}</td>
+                    <td>{formatDate(ficha.data_reprovacao || ficha.ultima_reprovacao)}</td>
                     <td>
                       <div style={{ display: 'flex', gap: '0.25rem' }}>
                         <button 
@@ -236,24 +232,18 @@ const FichasReprovadas = () => {
                         </button>
                         <button 
                           className="btn btn-sm btn-outline"
+                          onClick={() => handleDownloadPDF(ficha)}
+                          title="Gerar PDF"
+                        >
+                          <Download size={14} />
+                        </button>
+                        <button 
+                          className="btn btn-sm btn-outline"
                           onClick={() => navigate(`/fichas/${ficha.id}#historico`)}
-                          title="Ver histórico de reprovações"
+                          title="Ver histórico"
                         >
                           <History size={14} />
                         </button>
-                        {ficha.status !== 'reprovada_final' && (
-                          <button 
-                            className="btn btn-sm btn-danger"
-                            onClick={() => setConfirmModal({ 
-                              show: true, 
-                              fichaId: ficha.id, 
-                              codigo: ficha.codigo 
-                            })}
-                            title="Marcar como reprovada final"
-                          >
-                            <AlertOctagon size={14} />
-                          </button>
-                        )}
                       </div>
                     </td>
                   </tr>
@@ -284,39 +274,6 @@ const FichasReprovadas = () => {
           </div>
         )}
       </div>
-
-      {/* Confirm Modal */}
-      {confirmModal.show && (
-        <div className="modal-overlay" onClick={() => setConfirmModal({ show: false, fichaId: null, codigo: '' })}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header" style={{ backgroundColor: '#fef2f2' }}>
-              <h3 style={{ color: '#ef4444' }}>
-                <AlertOctagon size={20} /> Confirmar Reprovação Final
-              </h3>
-            </div>
-            <div className="modal-body">
-              <p>
-                Você está prestes a marcar a ficha <strong>{confirmModal.codigo}</strong> como 
-                <strong style={{ color: '#ef4444' }}> Reprovada Final</strong>.
-              </p>
-              <p style={{ color: '#64748b', marginTop: '0.5rem' }}>
-                Esta ação encerra definitivamente a ficha e não poderá ser desfeita.
-              </p>
-            </div>
-            <div className="modal-footer">
-              <button 
-                className="btn btn-outline" 
-                onClick={() => setConfirmModal({ show: false, fichaId: null, codigo: '' })}
-              >
-                Cancelar
-              </button>
-              <button className="btn btn-danger" onClick={handleReprovarFinal}>
-                Confirmar Reprovação Final
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

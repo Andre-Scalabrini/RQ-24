@@ -54,7 +54,6 @@ router.post('/:id/reprovar', [
   canMoveFicha,
   body('motivo').notEmpty().withMessage('Motivo da reprovação é obrigatório'),
   body('descricao').notEmpty().withMessage('Descrição da reprovação é obrigatória'),
-  body('etapa_retorno').notEmpty().withMessage('Etapa de retorno é obrigatória'),
   validate
 ], FichaController.reprovar);
 

@@ -123,6 +123,42 @@ class NotificacaoService {
       console.error('Erro ao criar notificação de aprovação:', error);
     }
   }
+
+  async criarNotificacaoReprovacao(fichaId, codigoFicha, criadorId, motivo, etapaReprovacao) {
+    try {
+      // Notify the projetista (creator) of the ficha
+      await Notificacao.create({
+        usuario_id: criadorId,
+        ficha_id: fichaId,
+        tipo: 'reprovacao',
+        titulo: 'Ficha reprovada',
+        mensagem: `A ficha ${codigoFicha} foi reprovada na etapa ${etapaReprovacao}. Motivo: ${motivo}`
+      });
+
+      // Notify all administrators
+      const admins = await Usuario.findAll({
+        where: { 
+          grupo: 'administrador',
+          ativo: true
+        }
+      });
+
+      for (const admin of admins) {
+        // Don't notify if the admin is also the creator
+        if (admin.id !== criadorId) {
+          await Notificacao.create({
+            usuario_id: admin.id,
+            ficha_id: fichaId,
+            tipo: 'reprovacao',
+            titulo: 'Ficha reprovada',
+            mensagem: `A ficha ${codigoFicha} foi reprovada na etapa ${etapaReprovacao}. Motivo: ${motivo}`
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao criar notificação de reprovação:', error);
+    }
+  }
 }
 
 module.exports = new NotificacaoService();
