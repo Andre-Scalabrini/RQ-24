@@ -182,18 +182,22 @@ const ModalReprovacao = ({ ficha, onClose, onSuccess }) => {
               
               {imagens.length > 0 && (
                 <div className="image-preview-container">
-                  {imagens.map((img, index) => (
-                    <div key={index} className="image-preview">
-                      <img src={`/uploads/${img}`} alt={`Preview ${index + 1}`} />
-                      <button
-                        type="button"
-                        className="image-remove"
-                        onClick={() => removeImage(index)}
-                      >
-                        <X size={12} />
-                      </button>
-                    </div>
-                  ))}
+                  {imagens.map((img, index) => {
+                    // Sanitize the image path to prevent XSS
+                    const sanitizedPath = encodeURIComponent(img).replace(/%2F/g, '/');
+                    return (
+                      <div key={index} className="image-preview">
+                        <img src={`/uploads/${sanitizedPath}`} alt={`Preview ${index + 1}`} />
+                        <button
+                          type="button"
+                          className="image-remove"
+                          onClick={() => removeImage(index)}
+                        >
+                          <X size={12} />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

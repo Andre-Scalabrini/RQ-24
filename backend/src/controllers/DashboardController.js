@@ -7,6 +7,9 @@ const {
   sequelize 
 } = require('../models');
 
+// Default locale for date formatting (Brazilian Portuguese)
+const DEFAULT_LOCALE = 'pt-BR';
+
 // Mapeamento de etapas
 const ETAPAS = {
   criacao: { ordem: 1, nome: 'Criação da Ficha' },
@@ -159,7 +162,7 @@ class DashboardController {
 
         meses.push({
           mes,
-          nome: new Date(anoAtual, mes - 1).toLocaleString('pt-BR', { month: 'short' }),
+          nome: new Date(anoAtual, mes - 1).toLocaleString(DEFAULT_LOCALE, { month: 'short' }),
           criadas,
           aprovadas,
           reprovadas

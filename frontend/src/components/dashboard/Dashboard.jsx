@@ -8,6 +8,9 @@ import TabelaRecentes from './TabelaRecentes';
 import AlertasAtraso from './AlertasAtraso';
 import { RefreshCw } from 'lucide-react';
 
+// Auto-refresh interval in milliseconds (5 minutes)
+const REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+
 const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [resumo, setResumo] = useState({
@@ -62,7 +65,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     loadDashboard();
-    const interval = setInterval(loadDashboard, 300000); // Refresh every 5 minutes
+    const interval = setInterval(loadDashboard, REFRESH_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [loadDashboard]);
 
