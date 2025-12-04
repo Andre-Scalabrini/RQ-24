@@ -10,16 +10,18 @@ const {
 // Default locale for date formatting (Brazilian Portuguese)
 const DEFAULT_LOCALE = 'pt-BR';
 
-// Mapeamento de etapas
+// Mapeamento de etapas (10 etapas conforme RQ-24 Rev. 06)
 const ETAPAS = {
   criacao: { ordem: 1, nome: 'Criação da Ficha' },
   modelacao: { ordem: 2, nome: 'Modelação' },
   moldagem: { ordem: 3, nome: 'Moldagem' },
   fusao: { ordem: 4, nome: 'Fusão' },
-  rebarbacao: { ordem: 5, nome: 'Rebarbação' },
-  inspecao: { ordem: 6, nome: 'Inspeção' },
-  usinagem: { ordem: 7, nome: 'Usinagem' },
-  aprovado: { ordem: 8, nome: 'Aprovado' }
+  acabamento: { ordem: 5, nome: 'Acabamento' },
+  analise_critica: { ordem: 6, nome: 'Análise Crítica' },
+  inspecao: { ordem: 7, nome: 'Inspeção' },
+  dimensional: { ordem: 8, nome: 'Dimensional' },
+  usinagem: { ordem: 9, nome: 'Usinagem' },
+  aprovado: { ordem: 10, nome: 'Aprovado' }
 };
 
 class DashboardController {

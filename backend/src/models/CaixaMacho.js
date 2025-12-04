@@ -15,6 +15,21 @@ const CaixaMacho = sequelize.define('CaixaMacho', {
       key: 'id'
     }
   },
+  identificacao: {
+    type: DataTypes.STRING(10),
+    allowNull: true,
+    comment: 'Identificação como A, B, C, D, E...'
+  },
+  // Dados da Caixa de Macho
+  material_caixa_macho: {
+    type: DataTypes.ENUM('Alumínio', 'Cibatool', 'Madeira'),
+    allowNull: true
+  },
+  peso_caixa_macho: {
+    type: DataTypes.DECIMAL(10, 3),
+    allowNull: true
+  },
+  // Dados do Macho
   numero_machos_peca: {
     type: DataTypes.INTEGER,
     allowNull: false
@@ -34,6 +49,10 @@ const CaixaMacho = sequelize.define('CaixaMacho', {
   qualidade_areia_macho: {
     type: DataTypes.STRING(100),
     allowNull: false
+  },
+  producao_machos_hora: {
+    type: DataTypes.INTEGER,
+    allowNull: true
   },
   possui_pintura_macho: {
     type: DataTypes.BOOLEAN,

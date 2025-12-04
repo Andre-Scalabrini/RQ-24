@@ -8,7 +8,7 @@ import { format, isPast, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Clock, AlertTriangle, Eye } from 'lucide-react';
 
-const ETAPAS_ORDER = ['criacao', 'modelacao', 'moldagem', 'fusao', 'rebarbacao', 'inspecao', 'usinagem', 'aprovado'];
+const ETAPAS_ORDER = ['criacao', 'modelacao', 'moldagem', 'fusao', 'acabamento', 'analise_critica', 'inspecao', 'dimensional', 'usinagem', 'aprovado'];
 
 const Kanban = () => {
   const navigate = useNavigate();
