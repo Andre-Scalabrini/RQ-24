@@ -4,6 +4,7 @@ const Usuario = require('./Usuario');
 const Ficha = require('./Ficha');
 const CaixaMacho = require('./CaixaMacho');
 const MoldeArvore = require('./MoldeArvore');
+const LuvaKalpur = require('./LuvaKalpur');
 const Movimentacao = require('./Movimentacao');
 const Imagem = require('./Imagem');
 const Notificacao = require('./Notificacao');
@@ -27,6 +28,10 @@ CaixaMacho.belongsTo(Ficha, { foreignKey: 'ficha_id', as: 'ficha' });
 // Ficha - MoldeArvore
 Ficha.hasMany(MoldeArvore, { foreignKey: 'ficha_id', as: 'moldes_arvore', onDelete: 'CASCADE' });
 MoldeArvore.belongsTo(Ficha, { foreignKey: 'ficha_id', as: 'ficha' });
+
+// Ficha - LuvaKalpur
+Ficha.hasMany(LuvaKalpur, { foreignKey: 'ficha_id', as: 'luvas_kalpur', onDelete: 'CASCADE' });
+LuvaKalpur.belongsTo(Ficha, { foreignKey: 'ficha_id', as: 'ficha' });
 
 // MoldeArvore - Usuario (validador)
 Usuario.hasMany(MoldeArvore, { foreignKey: 'validado_por', as: 'moldes_validados' });
@@ -75,6 +80,7 @@ module.exports = {
   Ficha,
   CaixaMacho,
   MoldeArvore,
+  LuvaKalpur,
   Movimentacao,
   Imagem,
   Notificacao,

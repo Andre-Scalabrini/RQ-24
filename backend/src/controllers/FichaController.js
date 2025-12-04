@@ -3,6 +3,7 @@ const {
   Ficha, 
   CaixaMacho, 
   MoldeArvore, 
+  LuvaKalpur,
   Movimentacao, 
   Usuario, 
   Imagem,
@@ -13,16 +14,18 @@ const {
 } = require('../models');
 const NotificacaoService = require('../services/NotificacaoService');
 
-// Mapeamento de etapas
+// Mapeamento de etapas (10 etapas conforme RQ-24 Rev. 06)
 const ETAPAS = {
   criacao: { ordem: 1, nome: 'Criação da Ficha' },
   modelacao: { ordem: 2, nome: 'Modelação' },
   moldagem: { ordem: 3, nome: 'Moldagem' },
   fusao: { ordem: 4, nome: 'Fusão' },
-  rebarbacao: { ordem: 5, nome: 'Rebarbação' },
-  inspecao: { ordem: 6, nome: 'Inspeção' },
-  usinagem: { ordem: 7, nome: 'Usinagem' },
-  aprovado: { ordem: 8, nome: 'Aprovado' }
+  acabamento: { ordem: 5, nome: 'Acabamento' },
+  analise_critica: { ordem: 6, nome: 'Análise Crítica' },
+  inspecao: { ordem: 7, nome: 'Inspeção' },
+  dimensional: { ordem: 8, nome: 'Dimensional' },
+  usinagem: { ordem: 9, nome: 'Usinagem' },
+  aprovado: { ordem: 10, nome: 'Aprovado' }
 };
 
 // Motivos de reprovação pré-definidos
@@ -50,6 +53,7 @@ const getProximaEtapa = (etapaAtual, possuiUsinagem) => {
   let proximaEtapa = etapas[indexAtual + 1];
   
   // Se não possui usinagem e a próxima etapa seria usinagem, pula para aprovado
+  // Conforme especificação: se "Possui Usinagem = Não", a ficha pula direto da etapa Dimensional para Aprovado
   if (proximaEtapa === 'usinagem' && !possuiUsinagem) {
     proximaEtapa = 'aprovado';
   }
@@ -138,7 +142,8 @@ class FichaController {
         include: [
           { model: Usuario, as: 'criador', attributes: ['id', 'nome'] },
           { model: CaixaMacho, as: 'caixas_macho' },
-          { model: MoldeArvore, as: 'moldes_arvore' }
+          { model: MoldeArvore, as: 'moldes_arvore' },
+          { model: LuvaKalpur, as: 'luvas_kalpur' }
         ],
         order: [
           ['atrasada', 'DESC'],
@@ -176,6 +181,7 @@ class FichaController {
         include: [
           { model: CaixaMacho, as: 'caixas_macho', order: [['ordem', 'ASC']] },
           { model: MoldeArvore, as: 'moldes_arvore', order: [['ordem', 'ASC']] },
+          { model: LuvaKalpur, as: 'luvas_kalpur', order: [['ordem', 'ASC']] },
           { model: Usuario, as: 'criador', attributes: ['id', 'nome', 'email'] },
           { 
             model: Movimentacao, 
@@ -234,6 +240,7 @@ class FichaController {
           await CaixaMacho.create({
             ...req.body.caixas_macho[i],
             ficha_id: ficha.id,
+            identificacao: String.fromCharCode(65 + i), // A, B, C, ...
             ordem: i + 1
           });
         }
@@ -244,6 +251,17 @@ class FichaController {
         for (let i = 0; i < req.body.moldes_arvore.length; i++) {
           await MoldeArvore.create({
             ...req.body.moldes_arvore[i],
+            ficha_id: ficha.id,
+            ordem: i + 1
+          });
+        }
+      }
+
+      // Criar luvas/kalpur
+      if (req.body.luvas_kalpur && Array.isArray(req.body.luvas_kalpur)) {
+        for (let i = 0; i < req.body.luvas_kalpur.length; i++) {
+          await LuvaKalpur.create({
+            ...req.body.luvas_kalpur[i],
             ficha_id: ficha.id,
             ordem: i + 1
           });
@@ -263,6 +281,7 @@ class FichaController {
         include: [
           { model: CaixaMacho, as: 'caixas_macho' },
           { model: MoldeArvore, as: 'moldes_arvore' },
+          { model: LuvaKalpur, as: 'luvas_kalpur' },
           { model: Usuario, as: 'criador', attributes: ['id', 'nome'] }
         ]
       });
@@ -285,7 +304,7 @@ class FichaController {
       }
 
       // Atualizar campos da ficha (exceto etapa e campos calculados)
-      const { caixas_macho, moldes_arvore, etapa_atual, codigo, ...dadosAtualizaveis } = req.body;
+      const { caixas_macho, moldes_arvore, luvas_kalpur, etapa_atual, codigo, ...dadosAtualizaveis } = req.body;
 
       // Recalcular campos automáticos se necessário
       const pesoMoldeAreia = dadosAtualizaveis.peso_molde_areia || ficha.peso_molde_areia;
@@ -311,6 +330,7 @@ class FichaController {
           await CaixaMacho.create({
             ...caixas_macho[i],
             ficha_id: id,
+            identificacao: String.fromCharCode(65 + i), // A, B, C, ...
             ordem: i + 1
           });
         }
@@ -331,10 +351,26 @@ class FichaController {
         }
       }
 
+      // Atualizar luvas/kalpur
+      if (luvas_kalpur && Array.isArray(luvas_kalpur)) {
+        // Remover existentes
+        await LuvaKalpur.destroy({ where: { ficha_id: id } });
+        
+        // Criar novos
+        for (let i = 0; i < luvas_kalpur.length; i++) {
+          await LuvaKalpur.create({
+            ...luvas_kalpur[i],
+            ficha_id: id,
+            ordem: i + 1
+          });
+        }
+      }
+
       const fichaAtualizada = await Ficha.findByPk(id, {
         include: [
           { model: CaixaMacho, as: 'caixas_macho' },
           { model: MoldeArvore, as: 'moldes_arvore' },
+          { model: LuvaKalpur, as: 'luvas_kalpur' },
           { model: Usuario, as: 'criador', attributes: ['id', 'nome'] }
         ]
       });
@@ -411,6 +447,7 @@ class FichaController {
         include: [
           { model: CaixaMacho, as: 'caixas_macho' },
           { model: MoldeArvore, as: 'moldes_arvore' },
+          { model: LuvaKalpur, as: 'luvas_kalpur' },
           { model: Usuario, as: 'criador', attributes: ['id', 'nome'] },
           { 
             model: Movimentacao, 

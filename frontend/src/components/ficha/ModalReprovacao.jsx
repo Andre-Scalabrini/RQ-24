@@ -8,8 +8,10 @@ const ETAPAS = {
   modelacao: 'Modelação',
   moldagem: 'Moldagem',
   fusao: 'Fusão',
-  rebarbacao: 'Rebarbação',
+  acabamento: 'Acabamento',
+  analise_critica: 'Análise Crítica',
   inspecao: 'Inspeção',
+  dimensional: 'Dimensional',
   usinagem: 'Usinagem',
   aprovado: 'Aprovado'
 };

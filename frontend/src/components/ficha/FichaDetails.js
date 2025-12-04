@@ -36,8 +36,10 @@ const FichaDetails = () => {
     modelacao: 'Modelação',
     moldagem: 'Moldagem',
     fusao: 'Fusão',
-    rebarbacao: 'Rebarbação',
+    acabamento: 'Acabamento',
+    analise_critica: 'Análise Crítica',
     inspecao: 'Inspeção',
+    dimensional: 'Dimensional',
     usinagem: 'Usinagem',
     aprovado: 'Aprovado'
   };
@@ -76,7 +78,7 @@ const FichaDetails = () => {
     
     let proximaEtapa = etapas[indexAtual + 1];
     
-    // Se não possui usinagem, pula direto para aprovado
+    // Se não possui usinagem, pula direto para aprovado (conforme RQ-24: de Dimensional para Aprovado)
     if (proximaEtapa === 'usinagem' && !ficha.possui_usinagem) {
       proximaEtapa = 'aprovado';
     }
@@ -220,10 +222,10 @@ const FichaDetails = () => {
         </div>
       </div>
 
-      {/* Dados Iniciais */}
+      {/* Cabeçalho */}
       <div className="card ficha-section">
         <div className="card-header">
-          <h2>Dados Iniciais</h2>
+          <h2>Cabeçalho</h2>
         </div>
         <div className="card-body">
           <div className="ficha-grid">
@@ -232,24 +234,108 @@ const FichaDetails = () => {
               <span className="ficha-field-value">{ficha.projetista}</span>
             </div>
             <div className="ficha-field">
-              <span className="ficha-field-label">Quantidade Amostra</span>
+              <span className="ficha-field-label">Código da Peça</span>
+              <span className="ficha-field-value">{ficha.codigo_peca || '-'}</span>
+            </div>
+            <div className="ficha-field">
+              <span className="ficha-field-label">Cliente</span>
+              <span className="ficha-field-value">{ficha.cliente || '-'}</span>
+            </div>
+            <div className="ficha-field">
+              <span className="ficha-field-label">Data de Criação</span>
+              <span className="ficha-field-value">{formatDateOnly(ficha.createdAt || ficha.created_at)}</span>
+            </div>
+            <div className="ficha-field">
+              <span className="ficha-field-label">Quantidade de Amostra</span>
               <span className="ficha-field-value">{ficha.quantidade_amostra}</span>
             </div>
             <div className="ficha-field">
-              <span className="ficha-field-label">Material</span>
-              <span className="ficha-field-value">{ficha.material}</span>
+              <span className="ficha-field-label">Prazo Final</span>
+              <span className="ficha-field-value" style={{ color: ficha.atrasada ? '#ef4444' : undefined }}>
+                {formatDateOnly(ficha.prazo_final)}
+              </span>
             </div>
             <div className="ficha-field">
-              <span className="ficha-field-label">Peso da Peça</span>
-              <span className="ficha-field-value">{ficha.peso_peca} kg</span>
+              <span className="ficha-field-label">Seguir Norma</span>
+              <span className="ficha-field-value">{ficha.seguir_norma || '-'}</span>
             </div>
-            <div className="ficha-field">
-              <span className="ficha-field-label">Nº Peças por Molde</span>
-              <span className="ficha-field-value">{ficha.numero_pecas_molde}</span>
-            </div>
+            {ficha.descricao_peca && (
+              <div className="ficha-field" style={{ gridColumn: '1 / -1' }}>
+                <span className="ficha-field-label">Descrição da Peça</span>
+                <span className="ficha-field-value">{ficha.descricao_peca}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Dados Gerais - Estimado vs Obtido */}
+      <div className="card ficha-section">
+        <div className="card-header">
+          <h2>Dados Gerais</h2>
+        </div>
+        <div className="card-body">
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Campo</th>
+                  <th>Estimado</th>
+                  <th>Obtido</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Material</td>
+                  <td>{ficha.material_estimado || ficha.material || '-'}</td>
+                  <td>{ficha.material_obtido || '-'}</td>
+                </tr>
+                <tr>
+                  <td>Peso da Peça (kg)</td>
+                  <td>{ficha.peso_peca_estimado || ficha.peso_peca || '-'}</td>
+                  <td>{ficha.peso_peca_obtido || '-'}</td>
+                </tr>
+                <tr>
+                  <td>Nº Peças por Molde</td>
+                  <td>{ficha.numero_pecas_molde_estimado || ficha.numero_pecas_molde || '-'}</td>
+                  <td>{ficha.numero_pecas_molde_obtido || '-'}</td>
+                </tr>
+                <tr>
+                  <td>Peso do Molde (kg)</td>
+                  <td>{ficha.peso_molde_estimado || ficha.peso_molde_areia || '-'}</td>
+                  <td>{ficha.peso_molde_obtido || '-'}</td>
+                </tr>
+                <tr>
+                  <td>Peso da Árvore (kg)</td>
+                  <td>{ficha.peso_arvore_estimado || ficha.peso_arvore || '-'}</td>
+                  <td>{ficha.peso_arvore_obtido || '-'}</td>
+                </tr>
+                <tr>
+                  <td>RAM</td>
+                  <td>{ficha.ram_estimado || ficha.ram ? parseFloat(ficha.ram_estimado || ficha.ram).toFixed(3) : '-'}</td>
+                  <td>{ficha.ram_obtido ? parseFloat(ficha.ram_obtido).toFixed(3) : '-'}</td>
+                </tr>
+                <tr>
+                  <td>RM (%)</td>
+                  <td>{ficha.rm_estimado || ficha.rm ? `${parseFloat(ficha.rm_estimado || ficha.rm).toFixed(2)}%` : '-'}</td>
+                  <td>{ficha.rm_obtido ? `${parseFloat(ficha.rm_obtido).toFixed(2)}%` : '-'}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Moldagem */}
+      <div className="card ficha-section">
+        <div className="card-header">
+          <h2>Moldagem</h2>
+        </div>
+        <div className="card-body">
+          <div className="ficha-grid">
             <div className="ficha-field">
               <span className="ficha-field-label">Processo de Moldagem</span>
-              <span className="ficha-field-value">{ficha.processo_moldagem}</span>
+              <span className="ficha-field-value">{ficha.processo_moldagem || '-'}</span>
             </div>
             {ficha.processo_moldagem === 'JOB' && (
               <>
@@ -267,57 +353,24 @@ const FichaDetails = () => {
                 </div>
               </>
             )}
-            <div className="ficha-field">
-              <span className="ficha-field-label">Prazo Final</span>
-              <span className="ficha-field-value" style={{ color: ficha.atrasada ? '#ef4444' : undefined }}>
-                {formatDateOnly(ficha.prazo_final)}
-              </span>
-            </div>
-            <div className="ficha-field">
-              <span className="ficha-field-label">Peso Molde de Areia</span>
-              <span className="ficha-field-value">{ficha.peso_molde_areia} kg</span>
-            </div>
-            <div className="ficha-field">
-              <span className="ficha-field-label">Peso da Árvore</span>
-              <span className="ficha-field-value">{ficha.peso_arvore} kg</span>
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Campos Calculados */}
+      {/* Modelação - Dados da Ferramenta */}
       <div className="card ficha-section">
         <div className="card-header">
-          <h2>Campos Calculados</h2>
-        </div>
-        <div className="card-body">
-          <div className="ficha-grid">
-            <div className="ficha-field">
-              <span className="ficha-field-label">RAM</span>
-              <span className="ficha-field-value">{ficha.ram ? parseFloat(ficha.ram).toFixed(3) : '-'}</span>
-            </div>
-            <div className="ficha-field">
-              <span className="ficha-field-label">RM</span>
-              <span className="ficha-field-value">{ficha.rm ? `${parseFloat(ficha.rm).toFixed(2)}%` : '-'}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Dados da Ferramenta */}
-      <div className="card ficha-section">
-        <div className="card-header">
-          <h2>Dados da Ferramenta</h2>
+          <h2>Modelação - Dados da Ferramenta</h2>
         </div>
         <div className="card-body">
           <div className="ficha-grid">
             <div className="ficha-field">
               <span className="ficha-field-label">Qtd. Figuras na Ferramenta</span>
-              <span className="ficha-field-value">{ficha.quantidade_figuras_ferramenta}</span>
+              <span className="ficha-field-value">{ficha.quantidade_figuras_ferramenta || '-'}</span>
             </div>
             <div className="ficha-field">
-              <span className="ficha-field-label">Material da Ferramenta</span>
-              <span className="ficha-field-value">{ficha.material_ferramenta}</span>
+              <span className="ficha-field-label">Material do Ferramental</span>
+              <span className="ficha-field-value">{ficha.material_ferramenta || '-'}</span>
             </div>
           </div>
         </div>
@@ -334,24 +387,30 @@ const FichaDetails = () => {
               <table>
                 <thead>
                   <tr>
-                    <th>#</th>
+                    <th>ID</th>
+                    <th>Material Caixa</th>
+                    <th>Peso Caixa</th>
                     <th>Nº Machos/Peça</th>
                     <th>Nº Figuras</th>
                     <th>Peso do Macho</th>
                     <th>Processo</th>
                     <th>Qualidade Areia</th>
+                    <th>Prod/Hora</th>
                     <th>Pintura</th>
                   </tr>
                 </thead>
                 <tbody>
                   {ficha.caixas_macho.map((caixa, index) => (
                     <tr key={caixa.id}>
-                      <td>{index + 1}</td>
+                      <td>{String.fromCharCode(65 + index)}</td>
+                      <td>{caixa.material_caixa_macho || '-'}</td>
+                      <td>{caixa.peso_caixa_macho ? `${caixa.peso_caixa_macho} kg` : '-'}</td>
                       <td>{caixa.numero_machos_peca}</td>
                       <td>{caixa.numero_figuras_caixa_macho}</td>
                       <td>{caixa.peso_macho} kg</td>
                       <td>{caixa.processo}</td>
                       <td>{caixa.qualidade_areia_macho}</td>
+                      <td>{caixa.producao_machos_hora || '-'}</td>
                       <td>{caixa.possui_pintura_macho ? `Sim (${caixa.tipo_pintura_macho})` : 'Não'}</td>
                     </tr>
                   ))}
@@ -362,11 +421,11 @@ const FichaDetails = () => {
         </div>
       )}
 
-      {/* Moldes de Árvore */}
+      {/* Moldes de Árvore (Acabamento) */}
       {ficha.moldes_arvore && ficha.moldes_arvore.length > 0 && (
         <div className="card ficha-section">
           <div className="card-header">
-            <h2>Moldes de Árvore ({ficha.moldes_arvore.length})</h2>
+            <h2>Acabamento - Moldes de Árvore ({ficha.moldes_arvore.length})</h2>
           </div>
           <div className="card-body">
             <div className="table-container">
@@ -403,6 +462,39 @@ const FichaDetails = () => {
         </div>
       )}
 
+      {/* Luvas / Kalpur */}
+      {ficha.luvas_kalpur && ficha.luvas_kalpur.length > 0 && (
+        <div className="card ficha-section">
+          <div className="card-header">
+            <h2>Luvas / Kalpur ({ficha.luvas_kalpur.length})</h2>
+          </div>
+          <div className="card-body">
+            <div className="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Quantidade</th>
+                    <th>Descrição</th>
+                    <th>Peso (kg)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ficha.luvas_kalpur.map((luva, index) => (
+                    <tr key={luva.id}>
+                      <td>{index + 1}</td>
+                      <td>{luva.quantidade}</td>
+                      <td>{luva.descricao || '-'}</td>
+                      <td>{luva.peso_kg || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Outros Dados */}
       <div className="card ficha-section">
         <div className="card-header">
@@ -412,7 +504,7 @@ const FichaDetails = () => {
           <div className="ficha-grid">
             <div className="ficha-field">
               <span className="ficha-field-label">Posição de Vazamento</span>
-              <span className="ficha-field-value">{ficha.posicao_vazamento}</span>
+              <span className="ficha-field-value">{ficha.posicao_vazamento || '-'}</span>
             </div>
             <div className="ficha-field">
               <span className="ficha-field-label">Resfriadores</span>
@@ -424,10 +516,12 @@ const FichaDetails = () => {
               <span className="ficha-field-label">Lateral de Aço</span>
               <span className="ficha-field-value">{ficha.lateral_aco || '-'}</span>
             </div>
-            <div className="ficha-field">
-              <span className="ficha-field-label">Luva Kalpur</span>
-              <span className="ficha-field-value">{ficha.luva_kalpur || '-'}</span>
-            </div>
+            {!ficha.luvas_kalpur?.length && (
+              <div className="ficha-field">
+                <span className="ficha-field-label">Luva Kalpur</span>
+                <span className="ficha-field-value">{ficha.luva_kalpur || '-'}</span>
+              </div>
+            )}
             <div className="ficha-field">
               <span className="ficha-field-label">Trat. Térmico Peça Bruta</span>
               <span className="ficha-field-value">{ficha.tratamento_termico_peca_bruta || '-'}</span>
